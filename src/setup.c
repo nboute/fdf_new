@@ -6,7 +6,7 @@
 /*   By: niboute <marvin@42.fr>                     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/02/21 15:44:31 by niboute           #+#    #+#             */
-/*   Updated: 2019/03/18 18:10:02 by niboute          ###   ########.fr       */
+/*   Updated: 2019/03/22 05:31:35 by niboute          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,14 +15,14 @@
 #include "../minilibx_macos/mlx.h"
 #include <stdio.h>
 
-int		ft_scale_point_values(t_mlx *mlx)
+int				ft_scale_point_values(t_mlx *mlx)
 {
-	int	x;
-	int	y;
-	int	zrange;
-	int	zrange2;
+	int			x;
+	int			y;
+	int			zrange;
+	int			zrange2;
 
-	zrange = mlx->z[1] - mlx->z[0];
+	zrange = mlx->chvars->z[1] - mlx->chvars->z[0];
 	zrange2 = (mlx->gridwid + mlx->gridhei) > 16 ?
 		(mlx->gridhei + mlx->gridwid) / 12 : (mlx->gridhei + mlx->gridwid) / 4;
 	y = 0;
@@ -33,27 +33,50 @@ int		ft_scale_point_values(t_mlx *mlx)
 		{
 			mlx->points[y][x].x -= (double)(mlx->gridwid - 1) / (double)2;
 			mlx->points[y][x].y -= (double)(mlx->gridhei - 1) / (double)2;
-			mlx->points[y][x].z = ft_dmap(mlx->points[y][x].z - mlx->z[0], zrange, -zrange2, zrange2) ;
-			printf("%.1lf ", mlx->points[y][x].x);
+			mlx->points[y][x].z = ft_dmap(mlx->points[y][x].z -
+					mlx->chvars->z[0], zrange, -zrange2, zrange2);
 			x++;
 		}
-		printf("\n");
 		y++;
 	}
-	printf("%zu|%zu\n", mlx->gridwid, mlx->gridwid / 2);
-	getchar();
+	mlx->chvars->z[0] = -zrange2;
+	mlx->chvars->z[1] = zrange2;
 	return (0);
 }
 
-t_mlx	*ft_setup_mlx_p2(t_mlx *mlx)
+int				ft_init_menu_win(t_mlx *mlx)
 {
-	int	a;
-	int	b;
-	int	c;
+	mlx->menuwin->wid = MENUWINWID;
+	mlx->menuwin->hei = MENUWINHEI;
+	if (!(mlx->menuwin->win =
+				mlx_new_window(mlx->mlx, MENUWINWID, MENUWINHEI, "Menu")))
+		return (0);
+	if (mlx->menuwin->img)
+		mlx_destroy_image(mlx->mlx, mlx->menuwin->img);
+	if (!(mlx->menuwin->img = mlx_new_image(mlx->mlx, MENUWINWID, MENUWINHEI)))
+		return (0);
+	if (!(mlx->menuwin->data =
+				mlx_get_data_addr(mlx->menuwin->img, &mlx->menuwin->bpx,
+					&mlx->menuwin->size_line, &mlx->menuwin->endian)))
+		return (0);
+	ft_reset_all(mlx->chvars);
+	mlx_hook(mlx->menuwin->win, 17, 1L << 17, ft_init_menu_win, (void*)mlx);
+	mlx_hook(mlx->menuwin->win, 5, 1L << 3, ft_menu_mouse_release_event,
+			mlx->chvars);
+	mlx_mouse_hook(mlx->menuwin->win, ft_menu_mouse_event, mlx->chvars);
+	mlx_key_hook(mlx->menuwin->win, ft_menu_key_event, mlx->chvars);
+	return (1);
+}
+
+t_mlx			*ft_setup_mlx_p2(t_mlx *mlx)
+{
 	if (!(mlx->mlx = mlx_init()))
 		return (NULL);
 	if (!(mlx->mainwin = (t_win*)malloc(sizeof(t_win))))
 		return (NULL);
+	if (!(mlx->menuwin = (t_win*)malloc(sizeof(t_win))))
+		return (NULL);
+	mlx->menuwin->img = NULL;
 	if (!(mlx->mainwin->win =
 				mlx_new_window(mlx->mlx, MAINWINWID, MAINWINHEI, "FDF")))
 		return (NULL);
@@ -62,43 +85,18 @@ t_mlx	*ft_setup_mlx_p2(t_mlx *mlx)
 	if (!(mlx->mainwin->img = mlx_new_image(mlx->mlx, MAINWINWID, MAINWINHEI)))
 		return (NULL);
 	if (!(mlx->mainwin->data =
-				mlx_get_data_addr(mlx->mainwin->img, &mlx->mainwin->bpx, &mlx->mainwin->size_line, &mlx->mainwin->endian)))
-		return (NULL);
-	if (!(mlx->menuwin = (t_win*)malloc(sizeof(t_win))))
-		return (NULL);
-	mlx->menuwin->wid = MENUWINWID;
-	mlx->menuwin->hei = MENUWINHEI;
-	if (!(mlx->menuwin->win =
-				mlx_new_window(mlx->mlx, MENUWINWID, MENUWINHEI, "Menu")))
-		return (NULL);
-	if (!(mlx->menuwin->img = mlx_new_image(mlx->mlx, MENUWINWID, MENUWINHEI)))
-		return (NULL);
-	if (!(mlx->menuwin->data =
-				mlx_get_data_addr(mlx->menuwin->img, &mlx->menuwin->bpx, &mlx->menuwin->size_line, &mlx->menuwin->endian)))
-		return (NULL);
-	if (!(mlx->chvars = (t_vars*)malloc(sizeof(t_vars))))
+				mlx_get_data_addr(mlx->mainwin->img, &mlx->mainwin->bpx,
+					&mlx->mainwin->size_line, &mlx->mainwin->endian)))
 		return (NULL);
 	mlx->chvars->defaultzoom = ((double)500 / (double)mlx->gridwid +
 			(double)500 / (double)mlx->gridhei) / (double)2;
-	/*
-	mlx->rotx = 0;
-	mlx->roty = 0;
-	mlx->rotz = 0;
-	mlx->rotxval = 0;
-	mlx->rotyval = 0;
-	mlx->rotzval = 0;
-	mlx->rotspd = 0.2;
-	mlx->chvars->rotspdir = 0;
-	mlx->chvars->zoomdir = 0;*/
-	ft_reset_all(mlx->chvars);
-	mlx->chvars->win_ch[0] = 1;
-	mlx->chvars->win_ch[1] = 0;
-	return (mlx);
+	mlx_key_hook(mlx->mainwin->win, ft_main_key_event, mlx->chvars);
+	return (ft_init_menu_win(mlx) != 0 ? mlx : NULL);
 }
 
-t_mlx	*ft_setup_mlx(t_mlx *mlx)
+t_mlx			*ft_setup_mlx(t_mlx *mlx)
 {
-	int	i;
+	int			i;
 	t_fileline	*tmp;
 
 	if (!(mlx->points =

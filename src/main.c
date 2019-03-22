@@ -6,7 +6,7 @@
 /*   By: niboute <marvin@42.fr>                     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/02/19 20:12:25 by niboute           #+#    #+#             */
-/*   Updated: 2019/03/18 14:22:44 by niboute          ###   ########.fr       */
+/*   Updated: 2019/03/22 06:52:38 by niboute          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,41 +17,83 @@
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
-int		ft_exit()
+
+void	ft_print_meme(char *name)
 {
-	printf("Wait.... thats illegal\n");
+	char	buff[513];
+	int		ret;
+	int		fd;
+
+	if ((fd = open(name, O_RDONLY)) < 3)
+		return ;
+	while ((ret = read(fd, buff, 512)) > 0)
+	{
+		buff[ret] = '\0';
+		ft_putstr(buff);
+	}
+	close(fd);
+}
+
+int		ft_exit(int err)
+{
+	if (err == 1)
+		ft_print_meme("inc/illegal.txt");
 	exit(-1);
+}
+
+int		ft_main_key_event(int keycode, t_vars *vars)
+{
+	vars = NULL;
+	if (keycode == 53)
+		ft_exit(0);
+	return (0);
+}
+
+int		ft_init_default_menu(t_mlx *mlx)
+{
+	if (!(mlx->chvars->btns_cols = (int*)malloc(sizeof(int) * BUTTONS)))
+		return (-1);
+	ft_bzero((void*)mlx->chvars->btns_cols, BUTTONS * sizeof(int));
+	if (!(mlx->chvars->btns_txt = (char**)malloc(sizeof(char*) *
+					(BUTTONS + 1))))
+		return (-1);
+	mlx->chvars->btns_txt[BUTTONS] = NULL;
+	mlx->chvars->btns_txt[0] = ft_strdup("rot X");
+	mlx->chvars->btns_txt[1] = ft_strdup("rot Y");
+	mlx->chvars->btns_txt[2] = ft_strdup("rot Z");
+	mlx->chvars->btns_txt[3] = ft_strdup("reset");
+	mlx->chvars->btns_txt[4] = ft_strdup("rotspd +/-");
+	mlx->chvars->btns_txt[5] = ft_strdup("zoom +/-");
+	mlx->chvars->btns_txt[6] = ft_strdup("red");
+	mlx->chvars->btns_txt[7] = ft_strdup("green");
+	mlx->chvars->btns_txt[8] = ft_strdup("blue");
+	ft_draw_default_menu(mlx);
+	return (0);
 }
 
 int		main(int ac, char **av)
 {
 	t_mlx	mlx;
+	int		fd;
+
 	if (ac != 2)
 		return (0);
-	printf("Aok\n");
-	if (!ft_read_file(av[1], &mlx))
+	if ((fd = open(av[1], O_RDONLY)) < 3)
+		return (-1);
+	if (!(mlx.chvars = (t_vars*)malloc(sizeof(t_vars))))
+		return (-1);
+	if (!ft_read_file(fd, &mlx))
 	{
+		close(fd);
+		ft_putendl("Invalid map");
 		return (0);
 	}
-	printf("Bok\n");
-	ft_bind_events(&mlx);
-	int	i;
-	i = 0;
-	int j;
-	while (i < mlx.gridhei)
+	close(fd);
+	if (!ft_setup_mlx(&mlx))
 	{
-		j = 0;
-		while (j < mlx.gridwid)
-		{
-			printf("%f ", mlx.points[i][j].z);
-			j++;
-		}
-		printf("\n");
-		i++;
+		ft_putendl("An error occured\n");
 	}
-//	ft_resetvals(&mlx);
-//	ft_draw(&mlx);
-	printf("OK\n");
+	mlx_hook(mlx.mainwin->win, 17, 1L << 17, ft_exit, (void*)1);
 	ft_init_default_menu(&mlx);
 	mlx_loop_hook(mlx.mlx, ft_loop, &mlx);
 	mlx_loop(mlx.mlx);

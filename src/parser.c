@@ -6,7 +6,7 @@
 /*   By: niboute <marvin@42.fr>                     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/12/05 11:05:29 by niboute           #+#    #+#             */
-/*   Updated: 2019/03/13 17:38:48 by niboute          ###   ########.fr       */
+/*   Updated: 2019/03/22 06:48:45 by niboute          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,9 +14,8 @@
 #include "../inc/header.h"
 #include <fcntl.h>
 #include <stdlib.h>
-#include <stdio.h>
 
-int		ft_is_number(char *str)
+int				ft_is_number(char *str)
 {
 	if (*str == '-' || *str == '+')
 		str++;
@@ -25,10 +24,11 @@ int		ft_is_number(char *str)
 	return (1);
 }
 
-int		store_str_p2(char *str, t_mlx *mlx, t_point *point, int y)
+int				store_str_p2(char *str, t_mlx *mlx, t_point *point, int y)
 {
-	int	i;
-	int	x;
+	int			i;
+	int			x;
+	static char	a = 0;
 
 	i = 0;
 	x = 0;
@@ -37,11 +37,13 @@ int		store_str_p2(char *str, t_mlx *mlx, t_point *point, int y)
 		point[x].x = x;
 		point[x].y = y;
 		point[x].z = ft_atoi(str + i);
-		if (!mlx->z[0] || point[x].z < mlx->z[0])
-			mlx->z[0] = point[x].z;
-		if (!mlx->z[1] || point[x].z > mlx->z[1])
-			mlx->z[1] = point[x].z;
-		i += (str[i] == '-' || str[i] == '+' ? 1 : 0);
+		point[x].color = WHITE;
+		if (!a || point[x].z < mlx->chvars->z[0])
+			mlx->chvars->z[0] = point[x].z;
+		if (!a || point[x].z > mlx->chvars->z[1])
+			mlx->chvars->z[1] = point[x].z;
+		a = 1;
+		i += (str[i] == '+' || str[i] == '-') ? 1 : 0;
 		while (str[i] >= '0' && str[i] <= '9')
 			i++;
 		while (str[i] == ' ')
@@ -51,7 +53,7 @@ int		store_str_p2(char *str, t_mlx *mlx, t_point *point, int y)
 	return (1);
 }
 
-int		store_str(char *str, t_mlx *mlx, size_t size, int y)
+int				store_str(char *str, t_mlx *mlx, size_t size, int y)
 {
 	t_fileline	*ptr;
 	t_fileline	*tmp;
@@ -74,10 +76,10 @@ int		store_str(char *str, t_mlx *mlx, size_t size, int y)
 	return (size);
 }
 
-size_t	check_store_str(char *str, t_mlx *mlx, size_t sizeref, int y)
+size_t			check_store_str(char *str, t_mlx *mlx, size_t sizeref, int y)
 {
-	size_t	size;
-	int		i;
+	size_t		size;
+	int			i;
 
 	i = 0;
 	size = 0;
@@ -95,34 +97,33 @@ size_t	check_store_str(char *str, t_mlx *mlx, size_t sizeref, int y)
 	}
 	if ((size == sizeref && size) || (sizeref == 0 && size))
 		store_str(str, mlx, size, y);
+	if (str)
+		ft_memdel((void**)&str);
 	return (size);
 }
 
-t_mlx	*ft_read_file(char *name, t_mlx *mlx)
+t_mlx			*ft_read_file(int fd, t_mlx *mlx)
 {
-	int		fd;
-	char	*str;
-	size_t	size;
-	int		y;
+	char		*str;
+	size_t		size;
+	int			y;
 
 	y = 1;
 	mlx->lines = NULL;
-	mlx->z[0] = 0;
-	mlx->z[1] = 0;
-	if ((fd = open(name, O_RDONLY)) < 3)
-		return (NULL);
+	mlx->chvars->z[1] = 0;
 	if ((get_next_line(fd, &str)) <= 0)
+	{
 		return (NULL);
+	}
 	if (!(size = check_store_str(str, mlx, 0, 0)))
 		return (NULL);
 	while ((get_next_line(fd, &str)) > 0)
 	{
 		if (size != check_store_str(str, mlx, size, y))
 			return (NULL);
-		ft_memdel((void**)&str);
 		y++;
 	}
 	mlx->gridwid = size;
 	mlx->gridhei = y;
-	return (ft_setup_mlx(mlx));
+	return (mlx);
 }
