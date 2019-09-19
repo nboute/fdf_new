@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   loop.c                                             :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: niboute <marvin@42.fr>                     +#+  +:+       +#+        */
+/*   By: niboute <niboute@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/02/27 13:58:44 by niboute           #+#    #+#             */
-/*   Updated: 2019/03/22 05:53:50 by niboute          ###   ########.fr       */
+/*   Updated: 2019/09/19 15:13:51 by niboute          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,7 +14,24 @@
 #include <math.h>
 #include "../minilibx_macos/mlx.h"
 
-void		ft_get_rots(t_vars *vars, float rot[3])
+void		rot_vals(double *x, double *y, double *z, float r[3])
+{
+	double	tmp;
+	double	tmp2;
+
+	tmp = cos(r[1]) * cos(r[2]) * *x - cos(r[1]) * sin(r[2]) * *y +
+		sin(r[1]) * *z;
+	tmp2 = (sin(r[0]) * sin(r[1]) * cos(r[2]) + cos(r[0]) * sin(r[2])) * *x
+		+ (-(sin(r[0]) * sin(r[1]) * sin(r[2])) + cos(r[0]) * cos(r[2])) * *y
+		- sin(r[0]) * cos(r[1]) * *z;
+	*z = (-cos(r[0]) * sin(r[1] * cos(r[2]) + sin(r[0] * sin(r[2])))) * *x
+		+ (cos(r[0]) * sin(r[1]) * sin(r[2]) + sin(r[0]) * cos(r[2])) * *y
+		+ cos(r[0]) * cos(r[1]) * *z;
+	*x = tmp;
+	*y = tmp2;
+}
+
+void		get_rots_n_proj(t_vars *vars, float rot[3])
 {
 	vars->rotxval += (float)vars->rotx * vars->rotspd;
 	vars->rotyval += (float)vars->roty * vars->rotspd;
@@ -30,55 +47,36 @@ void		ft_get_rots(t_vars *vars, float rot[3])
 	rot[2] = (vars->rotzval * M_PI) / 180;
 }
 
-void		ft_change_vals(t_point *p, double zoom, float rot[3])
+void		change_vals(t_point *p, t_vars *vars, float rot[3])
 {
-	int		tmp;
-
-	p->rx = p->x * zoom;
-	p->ry = p->y * zoom;
-	p->rz = p->z * zoom;
-	if (rot[0])
-	{
-		tmp = cos(rot[0]) * p->ry - sin(rot[0]) * p->rz;
-		p->rz = sin(rot[0]) * p->ry + cos(rot[0]) * p->rz;
-		p->ry = tmp;
-	}
-	if (rot[1])
-	{
-		tmp = cos(rot[1]) * p->rx + sin(rot[1]) * p->rz;
-		p->rz = -sin(rot[1]) * p->rx + cos(rot[1]) * p->rz;
-		p->rx = tmp;
-	}
-	if (rot[2])
-	{
-		tmp = cos(rot[2]) * p->rx - sin(rot[2]) * p->ry;
-		p->ry = sin(rot[2]) * p->rx + cos(rot[2]) * p->ry;
-		p->rx = tmp;
-	}
-	p->rx += MAINWINWID / 2;
-	p->ry += MAINWINHEI / 2;
+	p->rx = p->x * vars->zoom;
+	p->ry = p->y * vars->zoom;
+	p->rz = p->z * vars->zoom;
+	rot_vals(&p->rx, &p->ry, &p->rz, rot);
+	p->rx += MAINWINWID / 2 + vars->padx;
+	p->ry += MAINWINHEI / 2 + vars->pady;
 }
 
-void		ft_reset_nrot_vals(t_mlx *mlx, int (*ft)(t_point *a, t_point *b,
+void		reset_rot_draw(t_mlx *mlx, int (*ft)(t_point *a, t_point *b,
 			t_win *win))
 {
 	int		y;
 	int		x;
 	float	rot[3];
 
-	ft_get_rots(mlx->chvars, rot);
+	get_rots_n_proj(&mlx->chvars, rot);
 	y = -1;
 	while (++y < mlx->gridhei)
 	{
 		x = -1;
 		while (++x < mlx->gridwid)
 		{
-			ft_change_vals(&mlx->points[y][x], mlx->chvars->zoom, rot);
-			if (mlx->chvars->col_ch)
-				mlx->points[y][x].color = ft_color_grad(
-						mlx->chvars->col_start, mlx->chvars->col_end,
-						((mlx->points[y][x].z + mlx->chvars->z[1]) * 100) /
-							(mlx->chvars->z[1] * 2));
+			change_vals(&mlx->points[y][x], &mlx->chvars, rot);
+			if (mlx->chvars.col_ch)
+				mlx->points[y][x].color = color_grad(
+						mlx->chvars.col_start, mlx->chvars.col_end,
+						((mlx->points[y][x].z + mlx->chvars.z[1]) * 100) /
+							(mlx->chvars.z[1] * 2));
 			if (x > 0)
 				ft(&(mlx->points[y][x]),
 						&(mlx->points[y][x - 1]), mlx->mainwin);
@@ -89,55 +87,31 @@ void		ft_reset_nrot_vals(t_mlx *mlx, int (*ft)(t_point *a, t_point *b,
 	}
 }
 
-void		ft_rotate_point(t_point *p, float xrot, float yrot, float zrot)
+int			loop(t_mlx *mlx)
 {
-	int		tmp;
-
-	if (xrot)
-	{
-		tmp = cos(xrot) * p->ry - sin(xrot) * p->rz;
-		p->rz = sin(xrot) * p->ry + cos(xrot) * p->rz;
-		p->ry = tmp;
-	}
-	if (yrot)
-	{
-		tmp = cos(yrot) * p->rx + sin(yrot) * p->rz;
-		p->rz = -sin(yrot) * p->rx + cos(yrot) * p->rz;
-		p->rx = tmp;
-	}
-	if (zrot)
-	{
-		tmp = cos(zrot) * p->rx - sin(zrot) * p->ry;
-		p->ry = sin(zrot) * p->rx + cos(zrot) * p->ry;
-		p->rx = tmp;
-	}
-}
-
-int			ft_loop(t_mlx *mlx)
-{
-	ft_change_n_check_vars(mlx->chvars);
-	if (mlx->chvars->win_ch[0] != 0)
+	change_n_check_vars(&mlx->chvars);
+	if (mlx->chvars.win_ch[0] != 0)
 	{
 		mlx_destroy_image(mlx->mlx, mlx->mainwin->img);
 		mlx->mainwin->img = mlx_new_image(mlx->mlx, MAINWINWID, MAINWINHEI);
 		mlx->mainwin->data = mlx_get_data_addr(mlx->mainwin->img,
 				&mlx->mainwin->bpx, &mlx->mainwin->size_line,
 				&mlx->mainwin->endian);
-		ft_reset_nrot_vals(mlx,
-				mlx->chvars->col_start == mlx->chvars->col_end ?
-				ft_draw_line : ft_draw_line_select);
+		reset_rot_draw(mlx,
+				mlx->chvars.col_start == mlx->chvars.col_end ?
+				draw_line : draw_line_select);
 		mlx_put_image_to_window(mlx->mlx, mlx->mainwin->win, mlx->mainwin->img,
 			0, 0);
-		mlx->chvars->win_ch[0] = 0;
+		mlx->chvars.win_ch[0] = 0;
 	}
-	if (mlx->chvars->win_ch[1])
+	if (mlx->chvars.win_ch[1])
 	{
 		mlx_destroy_image(mlx->mlx, mlx->menuwin->img);
 		mlx->menuwin->img = mlx_new_image(mlx->mlx, MENUWINWID, MENUWINHEI);
 		mlx->menuwin->data = mlx_get_data_addr(mlx->menuwin->img,
 				&mlx->menuwin->bpx, &mlx->menuwin->size_line,
 				&mlx->menuwin->endian);
-		ft_draw_default_menu(mlx);
+		draw_default_menu(mlx);
 	}
 	return (0);
 }

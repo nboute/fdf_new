@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   menu.c                                             :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: niboute <marvin@42.fr>                     +#+  +:+       +#+        */
+/*   By: niboute <niboute@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/03/13 15:44:40 by niboute           #+#    #+#             */
-/*   Updated: 2019/03/22 05:53:00 by niboute          ###   ########.fr       */
+/*   Updated: 2019/09/19 15:16:17 by niboute          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,7 +14,7 @@
 #include "../inc/header.h"
 #include <stdlib.h>
 
-void	ft_draw_buttons(t_mlx *mlx, t_win *win)
+void	draw_buttons(t_mlx *mlx, t_win *win)
 {
 	int	x;
 	int	y;
@@ -35,7 +35,7 @@ void	ft_draw_buttons(t_mlx *mlx, t_win *win)
 						(win->size_line) * y) = WHITE;
 			else
 				*(unsigned*)(win->data + ((win->bpx / 8) * x) + (win->size_line)
-						* y) = mlx->chvars->btns_cols[curr_btn];
+						* y) = mlx->chvars.btns_cols[curr_btn];
 			x++;
 		}
 		y++;
@@ -43,27 +43,27 @@ void	ft_draw_buttons(t_mlx *mlx, t_win *win)
 	mlx_put_image_to_window(mlx->mlx, win->win, win->img, 0, 0);
 }
 
-void	ft_draw_color_val(int btn, t_mlx *mlx, int buthei, int xpos)
+void	draw_color_val(int btn, t_mlx *mlx, int buthei, int xpos)
 {
 	char	*tmp;
 
-	tmp = ft_itoa(mlx->chvars->color[btn - 6]);
+	tmp = ft_itoa(mlx->chvars.color[btn - 6]);
 	if (!tmp)
-		return ;
+		ft_exit(3);
 	mlx_string_put(mlx->mlx, mlx->menuwin->win, xpos,
 			((btn / BTN_COL) * buthei + buthei / 6)
 			, 0x00FFFFFF, tmp);
 	free(tmp);
-	tmp = ft_itoa(mlx->chvars->color[btn - 3]);
+	tmp = ft_itoa(mlx->chvars.color[btn - 3]);
 	if (!tmp)
-		return ;
+		ft_exit(3);
 	mlx_string_put(mlx->mlx, mlx->menuwin->win, xpos,
 			((btn / BTN_COL) * buthei + (4 * buthei) / 6)
 			, 0x00FFFFFF, tmp);
 	free(tmp);
 }
 
-void	ft_draw_btns_names(t_mlx *mlx, t_win *win)
+void	draw_btns_names(t_mlx *mlx, t_win *win)
 {
 	int	i;
 	int	buthei;
@@ -75,17 +75,17 @@ void	ft_draw_btns_names(t_mlx *mlx, t_win *win)
 	while (i < BUTTONS)
 	{
 		mlx_string_put(mlx->mlx, win->win, ((i % BTN_ROW) * butwid + butwid / 2
-				- (butwid / 32) * ft_strlen(mlx->chvars->btns_txt[i])),
+					- ft_strlen(mlx->chvars.btns_txt[i]) * 5),
 				((i / BTN_COL) * buthei + (6 * buthei) / (BTN_COL * 5))
-				, 0x00FFFFFF, mlx->chvars->btns_txt[i]);
+				, 0x00FFFFFF, mlx->chvars.btns_txt[i]);
 		if (i >= 6)
-			ft_draw_color_val(i, mlx, buthei,
+			draw_color_val(i, mlx, buthei,
 					((i % BTN_ROW) * butwid + butwid / 2) - (butwid / 32) * 3);
 		i++;
 	}
 }
 
-void	ft_determine_buttons_colors(t_vars *vars)
+void	determine_buttons_colors(t_vars *vars)
 {
 	if (vars->rotx)
 		vars->btns_cols[0] = vars->rotx > 0 ? LIGHT_GREEN : RED;
@@ -99,12 +99,17 @@ void	ft_determine_buttons_colors(t_vars *vars)
 		vars->btns_cols[2] = vars->rotz > 0 ? LIGHT_GREEN : RED;
 	else
 		vars->btns_cols[2] = BLACK;
+	vars->btns_cols[6] = BLACK;
+	vars->btns_cols[7] = BLACK;
+	vars->btns_cols[8] = BLACK;
+	if (vars->slc_col >= 0)
+		vars->btns_cols[(vars->slc_col % 3) + 6] = DARK_GREEN;
 }
 
-void	ft_draw_default_menu(t_mlx *mlx)
+void	draw_default_menu(t_mlx *mlx)
 {
-	ft_determine_buttons_colors(mlx->chvars);
-	ft_draw_buttons(mlx, mlx->menuwin);
-	ft_draw_btns_names(mlx, mlx->menuwin);
-	mlx->chvars->win_ch[1] = 0;
+	determine_buttons_colors(&mlx->chvars);
+	draw_buttons(mlx, mlx->menuwin);
+	draw_btns_names(mlx, mlx->menuwin);
+	mlx->chvars.win_ch[1] = 0;
 }

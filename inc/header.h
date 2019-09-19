@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   header.h                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: niboute <marvin@42.fr>                     +#+  +:+       +#+        */
+/*   By: niboute <niboute@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/12/05 11:08:05 by niboute           #+#    #+#             */
-/*   Updated: 2019/03/22 06:50:24 by niboute          ###   ########.fr       */
+/*   Updated: 2019/09/19 16:06:09 by niboute          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,7 +27,7 @@
 # define BUTTONS 9
 # define BTN_ROW 3
 # define BTN_COL 3
-#include "../libft/libft.h"
+# include "../libft/libft.h"
 
 typedef struct			s_point
 {
@@ -60,6 +60,8 @@ typedef struct			s_win
 
 typedef struct			s_vars
 {
+    short               mousex;
+    short               mousey;
 	float				rotspdir;
 	double				zoomdir;
 	double				defaultzoom;
@@ -71,16 +73,20 @@ typedef struct			s_vars
 	float				rotyval;
 	float				rotzval;
 	float				rotspd;
-	char				**btns_txt;
-	int					*btns_cols;
+	char				*(btns_txt[BUTTONS]);
+	int					btns_cols[BUTTONS];
 	int					win_ch[2];
 	unsigned int		col_start;
 	unsigned int		col_end;
 	unsigned char		color[6];
-	unsigned char		*select_col;
+	char				slc_col;
 	unsigned char		col_ch;
 	int					zscale;
 	double				z[2];
+	int					padx;
+	int					padxdir;
+	int					pady;
+	int					padydir;
 }						t_vars;
 
 typedef struct			s_mlx
@@ -92,29 +98,37 @@ typedef struct			s_mlx
 	struct s_win		*menuwin;
 	int					gridwid;
 	int					gridhei;
-
-	struct s_vars		*chvars;
+	struct s_vars		chvars;
 }						t_mlx;
 
-t_mlx	*ft_setup_mlx(t_mlx *mlx);
-t_mlx	*ft_read_file(int fd, t_mlx *mlx);
-int		ft_bind_events(t_mlx *mlx);
-int		ft_exit();
-int		ft_loop(t_mlx *mlx);
-int		ft_resetvals(t_mlx *mlx);
-int		ft_init_default_menu(t_mlx *mlx);
-void	ft_draw_buttons(t_mlx *mlx, t_win *win);
-void	ft_draw_default_menu(t_mlx *mlx);
-void	ft_draw_menu(t_mlx *mlx);
-void	ft_reset_all(t_vars *vars);
-int		ft_color_grad(unsigned int cola, unsigned int colb, int percent);
-int		ft_init_menu_win(t_mlx *mlx);
-int		ft_menu_mouse_event(int button, int x, int y, t_vars *vars);
-int		ft_menu_key_event(int keycode, t_vars *vars);
-int		ft_main_key_event(int keycode, t_vars *vars);
-int		ft_menu_mouse_release_event(int button, int x, int y, t_vars *vars);
-int		ft_draw_line_select(t_point *a, t_point *b, t_win *win);
-int		ft_draw_line(t_point *a, t_point *b, t_win *win);
-int		ft_change_n_check_vars(t_vars *vars);
+t_mlx					*setup_mlx(t_mlx *mlx);
+t_mlx					*read_file(int fd, t_mlx *mlx);
+int						bind_events(t_mlx *mlx);
+int						ft_exit(int err);
+int						loop(t_mlx *mlx);
+int						resetvals(t_mlx *mlx);
+int						init_default_menu(t_mlx *mlx);
+void					draw_buttons(t_mlx *mlx, t_win *win);
+void					draw_default_menu(t_mlx *mlx);
+void					draw_menu(t_mlx *mlx);
+void					reset_all(t_vars *vars);
+int						color_grad(unsigned int cola, unsigned int colb,
+						int percent);
+int						init_menu_win(t_mlx *mlx);
+int						menu_mouse_event(int button, int x, int y,
+						t_vars *vars);
+int						menu_key_event(int keycode, t_vars *vars);
+int						main_key_press_event(int keycode, t_vars *vars);
+int						main_key_release_event(int keycode, t_vars *vars);
+int						menu_mouse_release_event(int button, int x, int y,
+						t_vars *vars);
+int						main_mouse_release_event(int button, int x, int y,
+						t_vars *vars);
+int						main_mouse_press_event(int button, int x, int y,
+						t_vars *vars);
+int						draw_line_select(t_point *a, t_point *b, t_win *win);
+int						draw_line(t_point *a, t_point *b, t_win *win);
+int						change_n_check_vars(t_vars *vars);
+int						rescale_z(t_mlx *mlx);
 
 #endif

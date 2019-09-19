@@ -1,26 +1,34 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   colors.c                                           :+:      :+:    :+:   */
+/*   events_3.c                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: niboute <niboute@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2019/03/20 15:35:20 by niboute           #+#    #+#             */
-/*   Updated: 2019/09/19 15:13:37 by niboute          ###   ########.fr       */
+/*   Created: 2019/09/19 14:53:54 by niboute           #+#    #+#             */
+/*   Updated: 2019/09/19 15:25:51 by niboute          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../inc/header.h"
 
-int		color_grad(unsigned int cola, unsigned int colb, int percent)
+int		main_mouse_press_event(int button, int x, int y, t_vars *vars)
 {
-	short	r;
-	short	g;
-	short	b;
+	if (button == 1)
+	{
+		vars->mousex = x;
+		vars->mousey = y;
+	}
+	return (0);
+}
 
-	r = (colb >> 16) - (cola >> 16);
-	g = ((colb >> 8) & 0x000000FF) - ((cola >> 8) & 0x000000FF);
-	b = (colb & 255) - (cola & 255);
-	return (cola + ((((r * percent) / 100) * 65536) +
-				(((g * percent) / 100) * 256) + (b * percent) / 100));
+int		main_mouse_release_event(int button, int x, int y, t_vars *vars)
+{
+	if (button == 1)
+	{
+		vars->padx += x - vars->mousex;
+		vars->pady += y - vars->mousey;
+		vars->win_ch[0] = 1;
+	}
+	return (0);
 }
